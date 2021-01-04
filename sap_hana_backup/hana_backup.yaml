@@ -1,0 +1,93 @@
+FormatVersion: OOS-2019-06-01
+Description: SAP HANA数据库备份工具
+Parameters:
+  targetsInstance:
+    Type: Json
+    Description:
+      name-zh-cn: HANA数据库实例
+      name-en: HANA DB Instance
+      zh-cn: 请选择执行备份的SAP HANA数据库实例。
+      en: SAP HANA DB instance.
+    AssociationProperty: Targets
+    AssociationPropertyMetadata:
+      ResourceType: 'ALIYUN::ECS::Instance'
+  SID:
+    Type: String
+    Description:
+      name-zh-cn: HANA数据库系统ID
+      name-en: HANA DB SID
+      zh-cn: SAP HANA数据库系统ID。
+      en: SAP HANA DB system ID.
+  instanceNumber:
+    Type: String
+    Description:
+      name-zh-cn: HANA数据库系统编号
+      name-en: HANA DB Instance Number
+      zh-cn: SAP HANA数据库系统编号。
+      en: SAP HANA DB system instance number.
+  masterPass:
+    Type: String
+    Description:
+      name-zh-cn: Master密码
+      name-en: Master Password
+      zh-cn: SAP HANA数据库master密码。
+      en: SAP HANA DB master password.
+    NoEcho: true
+  databaseNames:
+    Type: String
+    Description:
+      name-zh-cn: 备份数据库名称
+      name-en: Backup DB Names
+      zh-cn: '备份的SAP HANA数据库名称，多个数据库请使用","分隔，如："SYSTEMDB,HDB"。'
+      en: 'SAP HANA database names，please use "," as separator, for example "SYSTEMDB,HDB".'
+  backupDir:
+    Type: String
+    Description:
+      name-zh-cn: 备份目录
+      name-en: Backup Directory
+      zh-cn: '备份文件目录，默认备份至"/usr/sap/{SID}/HDB{InstanceNumber}/backup/data"。'
+      en: 'Backup directory, the default directory is "/usr/sap/{SID}/HDB{InstanceNumber}/backup/data".'
+    Default: ''
+  OOSAssumeRole:
+    Description:
+      en: The RAM role to be assumed by OOS.
+      zh-cn: OOS扮演的RAM角色。
+    Type: String
+    Default: OOSServiceRole
+RamRole: '{{ OOSAssumeRole }}'
+Tasks:
+  - Name: getInstance
+    Action: 'ACS::SelectTargets'
+    Properties:
+      ResourceType: 'ALIYUN::ECS::Instance'
+      Filters:
+        - '{{ targetsInstance }}'
+    Outputs:
+      instanceId:
+        Type: String
+        ValueSelector: 'Instances.Instance[0].InstanceId'
+  - Name: runCommand
+    Action: 'ACS::ECS::RunCommand'
+    Description:
+      en: Download and run scripts to backup.
+      zh-cn: 下载并执行备份脚本
+    Properties:
+      commandContent:
+        'Fn::Join':
+          - |+
+
+          - - ROOT_DIR="/tmp/alibabacloud-backup"
+            - 'URL="https://sh-test-hangzhou.oss-cn-hangzhou.aliyuncs.com/sap-utilities/hana-backup/hana_backup.sh"'
+            - 'mkdir -p "${ROOT_DIR}"'
+            - '[[ ! -f "${ROOT_DIR}/hana_backup.sh" ]] && wget "${URL}" -O "${ROOT_DIR}/hana_backup.sh"'
+            - '[[ ! -f "${ROOT_DIR}/hana_backup.sh" ]] && { echo "Failed to download script." && exit 1; }'
+            - 'chmod +x "${ROOT_DIR}/hana_backup.sh"'
+            - '_backupDir=""'
+            - '[[ -n "{{ backupDir }}" ]] && _backupDir="--BackupDir={{ backupDir }}"'
+            - 'cd "${ROOT_DIR}" && bash hana_backup.sh -s --SID={{ SID }} --InstanceNumber={{ instanceNumber }} --MasterPass={{ masterPass }} --DatabaseNames={{ databaseNames }} ${_backupDir}'
+      commandType: RunShellScript
+      instanceId: '{{ getInstance.instanceId }}'
+    Outputs:
+      commandOutput:
+        Type: String
+        ValueSelector: invocationOutput
