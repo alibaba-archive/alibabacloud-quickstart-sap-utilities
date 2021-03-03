@@ -1,0 +1,325 @@
+{
+    "ROSTemplateFormatVersion": "2015-09-01",
+    "Parameters": {
+        "VSwitchId": {
+            "Type": "String",
+            "AssociationProperty": "ALIYUN::ECS::VSwitch::VSwitchId",
+            "Description": {
+                "zh-cn": "交换机ID，扩展的AAS实例所在的交换机ID，必需和PAS实例在同一VPC下。",
+                "en": "specify the ID of a VSwitch."
+            },
+            "Label": {
+                "zh-cn": "已有交换机ID",
+                "en": "VSwitch Instance ID"
+            }
+        },
+        "PASInstanceId": {
+            "Type": "String",
+            "AssociationProperty": "ALIYUN::ECS::Instance::InstanceId",
+            "Description": {
+                "zh-cn": "已有的SAP AS ABAP系统PAS实例ID",
+                "en": "PAS ECS ID"
+            },
+            "Label": {
+                "zh-cn": "PAS实例ID",
+                "en": "PAS ECS ID"
+            }
+        },
+        "PASIP": {
+            "Type": "String",
+            "Description": {
+                "zh-cn": "PAS实例的私网IP地址",
+                "en": ""
+            },
+            "Label": {
+                "zh-cn": "PAS实例私网IP地址",
+                "en": ""
+            }
+        },
+        "RootPassword": {
+            "Type": "String",
+            "Description": {
+                "zh-cn": "PAS实例中root用户的密码，推荐使用参数仓库的加密参数功能。",
+                "en": ""
+            },
+            "Label": {
+                "zh-cn": "PAS实例root用户密码",
+                "en": ""
+            }
+        },
+        "SAPSID": {
+            "Type": "String",
+            "Description": {
+                "zh-cn": "SAP AS ABAP系统的SID",
+                "en": ""
+            },
+            "Label": {
+                "zh-cn": "SAP系统SID",
+                "en": ""
+            }
+        },
+        "Username": {
+            "Type": "String",
+            "Description": {
+                "zh-cn": "登录SAP AS ABAP系统的用户名。",
+                "en": ""
+            },
+            "Label": {
+                "zh-cn": "SAP系统用户名",
+                "en": ""
+            }
+        },
+        "UserPassword": {
+            "Type": "String",
+            "Description": {
+                "zh-cn": "登录SAP AS ABAP系统的用户密码。",
+                "en": ""
+            },
+            "Label": {
+                "zh-cn": "用户密码",
+                "en": ""
+            }
+        },
+        "ClientNumber": {
+            "Type": "String",
+            "Description": {
+                "zh-cn": "登录SAP AS ABAP系统的Client编号。",
+                "en": ""
+            },
+            "Label": {
+                "zh-cn": "连接编号",
+                "en": ""
+            }
+        },
+        "MaxSize": {
+            "Type": "Number",
+            "Description": {
+                "zh-cn": "伸缩组内最大可存在的实例数量",
+                "en": "Maximum number of ECS instances in the scaling group. Value range: [0, 2000]."
+            },
+            "Label": {
+                "zh-cn": "组内最大实例数",
+                "en": "Max Size"
+            },
+            "MinValue": 0,
+            "MaxValue": 2000
+        },
+        "MinSize": {
+            "Type": "Number",
+            "Description": {
+                "zh-cn": "伸缩组内最小可存在的实例数量",
+                "en": "Minimum number of ECS instances in the scaling group. Value range: [0, 2000]."
+            },
+            "Label": {
+                "zh-cn": "组内最小实例数",
+                "en": "Min Size"
+            },
+            "MinValue": 0,
+            "MaxValue": 2000
+        },
+        "Cooldown": {
+            "Type": "Number",
+            "Description": {
+                "zh-cn": "冷却时间",
+                "en": "Default cool-down time (in seconds) of the scaling group. Value range: [0, 86400].\nThe default value is 300s."
+            },
+            "Label": {
+                "zh-cn": "冷却时间",
+                "en": "Cool-Down Time"
+            },
+            "Default": 300,
+            "MinValue": 0,
+            "MaxValue": 86400
+        },
+        "CpuTargetValue": {
+            "Type": "String",
+            "Description": {
+                "zh-cn": "期望的平均CPU使用率，弹性伸缩服务尽量将平均CPU使用率的指标值维持在该值附近",
+                "en": ""
+            },
+            "Label": {
+                "zh-cn": "期望平均CPU使用率",
+                "en": ""
+            },
+            "Default": 80
+        },
+        "ClassName": {
+            "Type": "String",
+            "Description": {
+                "zh-cn": "扩展的AAS实例将自动加入的Logon组，默认加入到'SPACE'组",
+                "en": ""
+            },
+            "Label": {
+                "zh-cn": "Logon组名",
+                "en": ""
+            },
+            "Default": "SAPCE"
+        }
+    },
+    "Resources": {
+        "ScalingGroup": {
+            "Type": "ALIYUN::ESS::ScalingGroup",
+            "Properties": {
+                "InstanceId": {
+                    "Ref": "PASInstanceId"
+                },
+                "VSwitchId": {
+                    "Ref": "VSwitchId"
+                },
+                "MaxSize": {
+                    "Ref": "MaxSize"
+                },
+                "ScalingGroupName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "SAPAutoScaling",
+                            {
+                                "Ref": "ALIYUN::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "MinSize": {
+                    "Ref": "MinSize"
+                },
+                "DefaultCooldown": {
+                    "Ref": "Cooldown"
+                }
+            }
+        },
+        "ScalingRuleAddOneInstance": {
+            "Type": "ALIYUN::ESS::ScalingRule",
+            "Properties": {
+                "ScalingRuleName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "AddOneInstance",
+                            {
+                                "Ref": "ALIYUN::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "AdjustmentValue": 1,
+                "ScalingGroupId": {
+                    "Ref": "ScalingGroup"
+                },
+                "AdjustmentType": "QuantityChangeInCapacity",
+                "ScalingRuleType": "SimpleScalingRule"
+            }
+        },
+        "ScalingRuleTargetCpu": {
+            "Type": "ALIYUN::ESS::ScalingRule",
+            "Properties": {
+                "ScalingRuleName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "TargetCpu",
+                            {
+                                "Ref": "ALIYUN::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "ScalingGroupId": {
+                    "Ref": "ScalingGroup"
+                },
+                "MetricName": "CpuUtilization",
+                "ScalingRuleType": "TargetTrackingScalingRule",
+                "TargetValue": {
+                    "Ref": "CpuTargetValue"
+                },
+                "DisableScaleIn": true
+            }
+        },
+        "LifecycleHookScaleOut": {
+            "Type": "ALIYUN::ESS::LifecycleHook",
+            "Properties": {
+                "LifecycleHookName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "Out",
+                            {
+                                "Ref": "ALIYUN::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "NotificationArn": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "acs:ess:",
+                            {
+                                "Ref": "ALIYUN::Region"
+                            },
+                            ":",
+                            {
+                                "Ref": "ALIYUN::TenantId"
+                            },
+                            ":",
+                            "oos/ACS-ESS-LifeCycleRunCommand"
+                        ]
+                    ]
+                },
+                "ScalingGroupId": {
+                    "Ref": "ScalingGroup"
+                },
+                "LifecycleTransition": "SCALE_OUT",
+                "NotificationMetadata": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "{\"commandContent\":\"mkdir -p /tmp/sap-auto-scaling && cd /tmp/sap-auto-scaling; wget -q https://sh-test-hangzhou.oss-cn-hangzhou.aliyuncs.com/sap-utilities/sap-auto-scaling/sap_auto_scaling.sh -O /tmp/sap-auto-scaling/sap_auto_scaling.sh && bash sap_auto_scaling.sh --UsrsapDiskName vdb --SwapDiskName vdc",
+                            " --PASIP ",
+                            {
+                                "Ref": "PASIP"
+                            },
+                            " --RootPassword ",
+                            {
+                                "Ref": "RootPassword"
+                            },
+                            " --SID ",
+                            {
+                                "Ref": "SAPSID"
+                            },
+                            " --Username ",
+                            {
+                                "Ref": "Username"
+                            },
+                            " --UserPassword ",
+                            {
+                                "Ref": "UserPassword"
+                            },
+                            " --ClientNumber ",
+                            {
+                                "Ref": "ClientNumber"
+                            },
+                            " --ClassName ",
+                            {
+                                "Ref": "ClassName"
+                            },
+                            "\",\"commandType\":\"RunShellScript\",\"rateControl\":\"{\\\"Mode\\\":\\\"Concurrency\\\",\\\"MaxErrors\\\":0,\\\"Concurrency\\\":10}\",\"regionId\":\"${regionId}\",\"instanceIds\":\"${instanceIds}\",\"lifecycleHookId\":\"${lifecycleHookId}\",\"lifecycleActionToken\":\"${lifecycleActionToken}\",\"OOSAssumeRole\":\"OOSServiceRole\"}"
+                            
+                        ]
+                    ]
+                },
+                "DefaultResult": "CONTINUE"
+            }
+        }
+    },
+    "Outputs": {
+        "ScalingGroupId": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "ScalingGroup",
+                    "ScalingGroupId"
+                ]
+            }
+        }
+    }
+}
