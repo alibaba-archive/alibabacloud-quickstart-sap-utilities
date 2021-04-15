@@ -4,15 +4,20 @@
 # Author: Alibaba Cloud, SAP Product & Solution Team
 ######################################################################
 # Tool Versions
-TOOL_VERSION='1.2'
+TOOL_VERSION='1.3'
 
 
 ######################################################################
 # Global variable
 ######################################################################
 OS_HOSTNAME=$(hostname)
-OS_DISTRIBUTOR="$(lsb_release -a | grep 'Distributor ID' | awk  '{print $3}')"
-OS_RELEASE="$(lsb_release -a | grep 'Release' | awk  '{print $2}')"
+OS_DISTRIBUTOR="UNKNOWN-OS"
+OS_RELEASE="UNKNOWN-VERSION"
+OS_INFO=$(zypper --no-remote --no-refresh --xmlout --non-interactive products -i)
+which lsb_release >/dev/null 2>&1 && OS_DISTRIBUTOR="$(lsb_release -a | grep 'Distributor ID' | awk  '{print $3}' 2>/dev/null)"
+[[ -z "${OS_DISTRIBUTOR}" ]] && OS_DISTRIBUTOR=$(expr "$OS_INFO" : '.*vendor=\"\(\w*\)\".*')
+which lsb_release >/dev/null 2>&1 && OS_RELEASE="$(lsb_release -a | grep 'Release' | awk  '{print $2}' 2>/dev/null)"
+[[ -z "${OS_RELEASE}" ]] && OS_RELEASE=$(expr "$OS_INFO" : '.*version=\"\([\.0-9]*\)\".*')
 OS_FOR_SAP="Not for SAP"
 $(cat /etc/issue | tr 'a-z' 'A-Z' |  grep -q "FOR SAP") && OS_FOR_SAP="For SAP"
 
@@ -714,7 +719,7 @@ function _check_ntp_service(){
         return
     fi
     # Other OS
-    warning_code_log "NotSupported.System" "This OS version(${OS_DISTRIBUTOR} ${OS_RELEASE})is not supported to check NTP service."
+    warning_code_log "NotSupported.System" "This OS version(${OS_DISTRIBUTOR} ${OS_RELEASE})is not supported to check NTP service, please manually check the service and configuration of NTP."
 }
 
 function check_ntp_service(){
