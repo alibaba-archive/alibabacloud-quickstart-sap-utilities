@@ -4,7 +4,7 @@
 # Author: Alibaba Cloud, SAP Product & Solution Team
 ######################################################################
 # Tool Versions
-TOOL_VERSION='1.3'
+TOOL_VERSION='1.4'
 
 
 ######################################################################
@@ -901,7 +901,7 @@ function _check_hosts_pingable(){
         return
     fi
 
-    run_cmd "ping ${cluster_member_hostname} -c 1 | grep -q '${cluster_member_hostname} (${cluster_member_ip})'" 
+    run_cmd "ping ${cluster_member_hostname} -c 1 | grep -q '${cluster_member_ip}'" 
     if [[ ${RES_CODE} -ne 0 ]]
     then
         error_code_log "UnmatchIPAddress" "Run command:'ping ${cluster_member_hostname}',the node(${cluster_member_hostname}) IP address does not match the entered IP(${cluster_member_ip}), please check the '/etc/hosts' file."
